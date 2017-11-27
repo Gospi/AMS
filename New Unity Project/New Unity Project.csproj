@@ -78,7 +78,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Wand and Circles\Polygon City Free Pack - Environment and Interior\FPSController.cs" />
+    <Compile Include="Assets\FPSController.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Wand and Circles\Polygon City Free Pack - Environment and Interior\Materials\Double Sided Standard Diffuse Bump.shader" />
