@@ -8,9 +8,11 @@ public class FPSController : MonoBehaviour
 {
     public float speed = 2f;
     public float sensitivity = 2f;
-    public bool invertAxis = false;
-    CharacterController player;
+    public bool invertAxis = false;    
     public GameObject eyes;
+
+    CharacterController player;
+    int fpsCnt = 0;
     float moveFB;
     float moveLR;
     float moveUD;
@@ -20,30 +22,31 @@ public class FPSController : MonoBehaviour
     void Start()
     {
         player = GetComponent<CharacterController>();
-        get2DDistance();
     }
 
     // Update is called once per frame
     void Update()
     {
         playerMovement();
-        //Debug.Log(scanRange());
-        
+        //------------NUR ZUM TESTEN---------------------
+        fpsCnt++;
+        float accuracy = 0.001f;
+        int minRange = 0;
+        int maxRange = 10;
+        int startAngle = 0;
+        int EndAngle = 360;
+        int stepAngle = 1;
 
-        /*
-        if (CheckDistance(1f, Direction.X))
+        if(fpsCnt == 60)
         {
-            Debug.Log("Gegenstand in X Richtung");
+            float start_time = Time.time;
+            get2DDistance(accuracy,minRange, maxRange, startAngle, EndAngle, stepAngle);
+            float Zeit = Time.time - start_time;
+            Debug.Log("Zeit: " + Zeit);
+            fpsCnt = 0;
         }
-        if (CheckDistance(1f, Direction.Y))
-        {
-            Debug.Log("Gegenstand in Y Richtung");
-        }
-        if (CheckDistance(1f, Direction.Z))
-        {
-            Debug.Log("Gegenstand in Z Richtung");
-        }
-        */
+        //---------------------------------------------------
+        //Debug.Log(scanRange());
     }
 
     void playerMovement(){
@@ -120,39 +123,62 @@ public class FPSController : MonoBehaviour
         return false;
 
     }
-    List<float> get2DDistance()        
+
+    //this function simulates a Lidar Sensor
+    List<float> get2DDistance(float accuracy = 0.1f, int minRange = 0, int maxRange = 10, int startAngle = 0, int endAngle = 360,  int stepAngle = 1)        
     {
-        float accuracy = 0.01f;
+        float Angle = 0.0f;
         List<float> list = new List<float> { };
-        Vector3 dir = new Vector3(1f, 0f, 0f);
-        dir = this.transform.forward;
-        //Quaternion q = Quaternion.AngleAxis(1, dir);
-        Ray ray = new Ray(this.transform.position, dir);
-        float xAxisVal = 0.0f;
-        float yAxisVal = 0.0f;
-        for (int j = 0; j < 50; j++) {
-            
-            for (int i = 0; i < 10000; i++)//Schleife misst den Abstand mit dem aktuellen Raycast
-            {
-                float tmp = i * accuracy;
-                if (Physics.Raycast(ray, tmp))
-                {
-                    Debug.DrawRay(this.transform.position, dir * 3);
-                    list.Add(tmp);
-                    Debug.Log(j+ ": Abstand" + tmp);
-                    break;
-                }
-                
-            }
-            //q = Quaternion.AngleAxis(1, dir);
-            xAxisVal = ((float)j) / 3.6f;
-            yAxisVal = ((float)j) / 3.6f;
-            //Debug.Log("xAxisVal " + xAxisVal);
-            //Debug.Log("yAxisVal " + yAxisVal);
-            dir.Set(Mathf.Cos(xAxisVal) , Mathf.Sin(yAxisVal),0);
-            Debug.Log("dir: " + dir);
+        Vector3 dir = new Vector3(1f, 0f, 0f);        
+        dir.Set(Mathf.Cos(Angle), Mathf.Sin(Angle), 0); //TODO: support diffrent directions + z angle
+        Ray ray = new Ray(this.transform.position, dir);        
+        for (int j = startAngle; j < endAngle; j += stepAngle) {    //Schleife geht alle winkel durch        
+            float dist = getDistance(ray, maxRange, accuracy, minRange);
+            Debug.Log(j + " Abstand: " + dist );
+            list.Add(dist);
+            //Winkel setzen
+            Angle = ((float)j) * Mathf.Deg2Rad;
+            //dir und ray anpassen
+            dir.Set(Mathf.Cos(Angle) , Mathf.Sin(Angle), 0);
             ray.direction =  dir;
         }
         return list;
     }
+
+    private float getDistance(Ray ray, int maxRange, float accuracy = 0.1f ,int minRange =0)
+    {
+        float tmp = 1 / accuracy;
+        maxRange *= (int)tmp;
+        minRange *= (int)tmp;
+        float distance = minRange * accuracy;
+
+        for (int i = minRange; maxRange - minRange > 1; i = ((maxRange - minRange) / 2) + minRange)//Schleife misst den Abstand mit dem aktuellen Raycast         
+        {
+            distance = i * accuracy;
+            if (Physics.Raycast(ray, distance))
+            {                
+                maxRange = i;
+            }
+            else
+            {
+                minRange = i;
+            }
+        }
+        return distance;
+    }
 }
+
+
+/* ---------------------alte Schleife um distanz zu bestimmen
+ *             for (int i = minRange; i < maxRange; i++)//Schleife misst den Abstand mit dem aktuellen Raycast
+            {
+                distance = i * accuracy;
+                if (Physics.Raycast(ray, distance))
+                {                    
+                    list.Add(distance);
+                    Debug.Log("alte Methode:" + distance);
+                    //Debug.DrawRay(this.transform.position, dir * distance);
+                    break;
+                }                
+            }
+*/
