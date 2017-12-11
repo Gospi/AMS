@@ -10,58 +10,45 @@ public class FPSController : MonoBehaviour
     public float sensitivity = 2f;
     public bool invertAxis = false;    
     public GameObject eyes;
+    //parameters for Lidar scan
+    public float updateScanTime = 1f;
+    public float accuracy = 0.0001f;
+    public int minRange = 0;
+    public int maxRange = 10;
+    public int startAngle = 0;
+    public int EndAngle = 360;
+    public int stepAngle = 90;
+    public int zAngle = 1;
+
 
     CharacterController player;
-    int fpsCnt = 0;
+    private float Zeit;
     float moveFB;
     float moveLR;
     float moveUD;
     float rotx;
     float roty;
+    float start_time = 0f;
     // Use this for initialization
     void Start()
     {
         player = GetComponent<CharacterController>();
-
-        float accuracy = 0.00001f;
-        int minRange = 0;
-        int maxRange = 10;
-        int startAngle = 0;
-        int EndAngle = 1;
-        int stepAngle = 1;
-        int zAngle = 10;
-
-        get2DDistance(accuracy, minRange, maxRange, startAngle, EndAngle, stepAngle, zAngle);
+        //get2DDistance(accuracy, minRange, maxRange, startAngle, EndAngle, stepAngle, zAngle);
+        InvokeRepeating("lidarScan", 0f, updateScanTime);
     }
 
     // Update is called once per frame
     void Update()
     {
         playerMovement();
-        //------------NUR ZUM TESTEN---------------------
-        /*
-        fpsCnt++;
-        float accuracy = 0.0001f;
-        int minRange = 0;
-        int maxRange = 10;
-        int startAngle = 0;
-        int EndAngle = 360;
-        int stepAngle = 90;
-        int zAngle = 1;
-
-        if(fpsCnt == 60)
-        {
-            float start_time = Time.time;
-            get2DDistance(accuracy,minRange, maxRange, startAngle, EndAngle, stepAngle, zAngle);
-            float Zeit = Time.time - start_time;
-            Debug.Log("Zeit: " + Zeit);
-            fpsCnt = 0;
-        }
-        */
-        //---------------------------------------------------
         //Debug.Log(scanRange());
     }
-
+    void lidarScan()
+    {
+        get2DDistance(accuracy, minRange, maxRange, startAngle, EndAngle, stepAngle, zAngle);
+        Debug.Log("Zeit: " + Time.time);
+    }
+    //function moves Drone with wasd (up + down)
     void playerMovement(){
         moveFB = Input.GetAxis("Vertical") * speed;
         moveLR = Input.GetAxis("Horizontal") * speed;
@@ -77,6 +64,7 @@ public class FPSController : MonoBehaviour
         player.Move(movement * Time.deltaTime);
     }
 
+    //Funktion gibt kürzeste Distanz in  eine Achsrichtung aus
     float scanRange()
     {
         int maxRange = 50;
@@ -102,6 +90,7 @@ public class FPSController : MonoBehaviour
         }
         return tmp;
     }
+    //überprüft eine bestimmte Richtung auf eine bestimmte Distanz
     bool CheckDistance(float distance , Direction dir)
     {
         Vector3 dirf = new Vector3(0f, 0f, 0f);
@@ -141,15 +130,22 @@ public class FPSController : MonoBehaviour
     List<float> get2DDistance(float accuracy = 0.1f,
         int minRange = 0, int maxRange = 10, int startAngle = 0, int endAngle = 360, int stepAngle = 1, int zAngle = 0)
     {
+        //zunächste alle alten Spawnpunkte löschen
+        GameObject[] recentspheres = GameObject.FindGameObjectsWithTag("recent spheres");
+        for (int i = 0; i <recentspheres.Length ; i++)
+        {
+            Destroy(recentspheres[i]);
+        }
+
         float Angle = 0.0f;
         float Tilt = -zAngle * Mathf.Deg2Rad;
         List<float> list = new List<float> { };
         Vector3 dir = new Vector3(1f, 0f, 0f);
-        dir.Set(Mathf.Cos(Angle), Mathf.Sin(Angle), Mathf.Sin(Tilt)); //TODO: support diffrent directions + z angle
+        dir.Set(Mathf.Cos(Angle), Mathf.Sin(Angle), Mathf.Sin(Tilt)); 
         Ray ray = new Ray(this.transform.position, dir);
         for (int j = -zAngle; j < zAngle+1 ; j++) { 
             for (int i = startAngle; i < endAngle; i += stepAngle) {    //iterate through all given angles        
-                float dist = get1DDistance(ray, maxRange, accuracy, minRange);
+                float dist = get1DDistance(ray, maxRange, accuracy, minRange , false);
                 Debug.Log(j + "  " + i + " Abstand: " + dist);
                 list.Add(dist);
                 //Winkel setzen
@@ -164,7 +160,8 @@ public class FPSController : MonoBehaviour
         return list;
     }
 
-    private float get1DDistance(Ray ray, int maxRange, float accuracy = 0.1f ,int minRange =0)
+    //Funktion ermittelt über Raycast die Distanz in eine bestimmte Richtung
+    private float get1DDistance(Ray ray, int maxRange, float accuracy = 0.1f, int minRange = 0, bool spawnSpheres = false)
     {
         float tmp = 1 / accuracy;
         maxRange *= (int)tmp;
@@ -182,6 +179,14 @@ public class FPSController : MonoBehaviour
             {
                 minRange = i;
             }
+        }
+        if (spawnSpheres)
+        {
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            cube.transform.position = this.transform.position + ray.direction * distance;
+            cube.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            cube.name = "Kugel";
+            cube.tag = "recent spheres";
         }
         return distance;
     }
