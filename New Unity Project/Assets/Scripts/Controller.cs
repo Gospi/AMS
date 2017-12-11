@@ -52,10 +52,9 @@ public class Controller : MonoBehaviour {
                 this.laserReadings = this.laserReadings.OrderByDescending(x => x.Value).ToList();
                 KeyValuePair<float, float> reading = new KeyValuePair<float, float>(0, 0);
                 reading = this.laserReadings[0];
+                this.transform.Rotate(this.transform.up, reading.Key);
                 var nextDestination = this.transform.position + this.transform.forward * reading.Value * 0.2f;
                 this.nextDestination = nextDestination;
-                this.transform.Rotate(this.transform.up, reading.Key);
-                this.nextDestination = this.transform.position + this.transform.forward * reading.Value * 0.2f;
                 this.movementState = MovementState.Moving;
                 break;
             case MovementState.Moving:
