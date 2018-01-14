@@ -79,8 +79,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\FPSController.cs" />
+    <Compile Include="Assets\Scripts\Controller.cs" />
+    <Compile Include="Assets\Scripts\Sensor.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Mega Fantasy Props Pack\README.txt" />
     <None Include="Assets\Wand and Circles\Polygon City Free Pack - Environment and Interior\Materials\Double Sided Standard Diffuse Bump.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
